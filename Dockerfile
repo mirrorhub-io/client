@@ -11,6 +11,10 @@ COPY nginx/nginx.conf /etc/nginx/nginx.conf
 COPY nginx/mirrorhub-client /etc/nginx/sites-available/mirrorhub-client
 RUN rm /etc/nginx/sites-enabled/default
 
+##
+# Configure Letsencrypt
+RUN mkdir -p /tmp/letsencrypt
+
 RUN mkdir -p /srv/internals
 
 COPY init_mirrorhub_client /usr/local/bin/
