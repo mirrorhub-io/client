@@ -19,6 +19,18 @@ def exec_cmd(cmd):
         cmd (str): shell command'''
     subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, shell=True)
 
+def gen_ngx_conf(template_name):
+    NGINX_CONF_TEMP = Template(open('/srv/internals/%s.j2' % template_name).read())
+    with open('/etc/nginx/sites-available/mirror.conf', 'w+') as f:
+        f.write(NGINX_CONF_TEMP.render(domain=HOSTNAME, mirror_name='test'))
+
+    if Path("/etc/nginx/sites-enabled/mirror.conf").is_file():
+        os.unlink('/etc/nginx/sites-enabled/mirror.conf')
+
+    os.symlink('/etc/nginx/sites-available/mirror.conf',
+               '/etc/nginx/sites-enabled/mirror.conf')
+
+
 
 print(r'''
            _                     _           _      _
@@ -40,31 +52,24 @@ else:
 
 print('[nginx] Using %s as HOSTNAME' % HOSTNAME)
 
-print('[nginx] Applying temporary site configuration..')
-NGINX_CONF_TEMP = Template(open('/srv/internals/mirror_nonssl.j2').read())
-with open('/etc/nginx/sites-available/mirror.conf', 'w+') as f:
-    f.write(NGINX_CONF_TEMP.render(domain=HOSTNAME, mirror_name='test'))
-
-os.symlink('/etc/nginx/sites-available/mirror.conf',
-           '/etc/nginx/sites-enabled/mirror.conf')
-
-NGINX = subprocess.Popen('/usr/sbin/nginx')
 
 if os.path.exists('/etc/letsencrypt/live/' + HOSTNAME):
     print('[cert] Found certificate for domain. Attempt renew..')
     exec_cmd('letsencrypt renew ' + LETSENCRYPT_ARGS)
 else:
+    print('[nginx] Applying temporary site configuration..')
+    gen_ngx_conf('mirror_nonssl')
+    NGINX = subprocess.Popen('/usr/sbin/nginx')
+
     print('[cert] Missing certificate for domain. Request new one..')
     exec_cmd('letsencrypt certonly %s --register-unsafely-without-email \
              --agree-tos -d %s' % (LETSENCRYPT_ARGS, HOSTNAME))
 
-os.kill(NGINX.pid, signal.SIGTERM)
+    os.kill(NGINX.pid, signal.SIGTERM)
 
 
 print('[nginx] Applying final site configuration..')
-NGINX_CONF_TEMP = Template(open('/srv/internals/mirror.j2').read())
-with open('/etc/nginx/sites-available/mirror.conf', 'w+') as f:
-    f.write(NGINX_CONF_TEMP.render(domain=HOSTNAME, mirror_name='test'))
+gen_ngx_conf('mirror')
 
 print('[mirror] Ready to serve!')
 exec_cmd('/usr/bin/supervisord')
