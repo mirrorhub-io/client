@@ -1,5 +1,5 @@
-'''init script which prepares our docker container'''
 #!/usr/bin/env python3
+'''init script which prepares our docker container'''
 import os
 import signal
 import socket
@@ -29,7 +29,7 @@ print(r'''
 |_| |_| |_|_|_|  |_|  \___/|_|  |_| |_|\__,_|_.__(_)_|\___/
 ============================================================
 ''')
-exit()
+
 if not Path("/srv/nginx/dhparam.pem").is_file():
     print('[nginx] Did not found dhparams, generating. This may take a while..')
     exec_cmd('openssl dhparam -out /srv/nginx/dhparam.pem 2048')
