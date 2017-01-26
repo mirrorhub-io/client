@@ -11,6 +11,7 @@ Start with
 ```
 docker run \
   -p 80:80 -p 443:443 \
+  -v "`pwd`/volumes/nginx":/srv/nginx \
   -v "`pwd`/volumes/internals":/srv/internals \
   -v "`pwd`/volumes/letsencrypt":/etc/letsencrypt/live \
   -v "`pwd`/volumes/archive":/etc/letsencrypt/archive \
