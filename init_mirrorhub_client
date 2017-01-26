@@ -14,17 +14,36 @@ logo = """
 """
 print(logo)
 
-if not Path("/srv/internals/dhparam.pem").is_file():
-  print('[nginx] Did not found dhparams, generating. This may take a while..')
-  subprocess.run('openssl dhparam -out /srv/internals/dhparam.pem 2048', stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, shell=True)
-  print('[nginx] Finished generating.')
+if not Path("/srv/nginx/dhparam.pem").is_file():
+    print('[nginx] Did not found dhparams, generating. This may take a while..')
+    subprocess.run('openssl dhparam -out /srv/nginx/dhparam.pem 2048', stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, shell=True)
+    print('[nginx] Finished generating.')
 else:
-  print('[nginx] Using existing dhparams')
+    print('[nginx] Using existing dhparams')
 
 hostname = socket.gethostname()
-#subprocess.run('letsencrypt certonly -a webroot --webroot-path=/tmp/letsencrypt --rsa-key-size 4096 -d %s' % hostname, shell=True)
 
 print('[nginx] Using %s as hostname' % hostname)
+
+nginx_site = Template(open('/srv/internals/mirror_nonssl.j2').read())
+with open('/etc/nginx/sites-available/mirror.conf', 'w+') as f:
+    f.write(nginx_site.render(domain=hostname, mirror_name='test'))
+
+os.symlink('/etc/nginx/sites-available/mirror.conf',
+           '/etc/nginx/sites-enabled/mirror.conf')
+
+nginx = subprocess.Popen('/usr/sbin/nginx')
+
+if os.path.exists('/etc/letsencrypt/live/' + hostname):
+    subprocess.run('letsencrypt renew -a webroot --webroot-path=/tmp/letsencrypt --rsa-key-size 4096 --non-interactive', shell=True)
+else:
+    subprocess.run('letsencrypt certonly -a webroot --webroot-path=/tmp/letsencrypt --rsa-key-size 4096 --register-unsafely-without-email --non-interactive --agree-tos -d %s' % hostname, shell=True)
+
+os.kill(nginx.pid, signal.SIGTERM)
+
+nginx_site = Template(open('/srv/internals/mirror.j2').read())
+with open('/etc/nginx/sites-available/mirror.conf', 'w+') as f:
+    f.write(nginx_site.render(domain=hostname, mirror_name='test'))
 
 print('[mirror] Ready to serve!')
 subprocess.run('/usr/bin/supervisord', stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
