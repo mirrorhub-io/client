@@ -18,5 +18,5 @@ RUN mkdir -p /tmp/letsencrypt
 RUN mkdir -p /srv/internals
 RUN mkdir -p /srv/nginx
 
-COPY init_mirrorhub_client /usr/local/bin/
-CMD init_mirrorhub_client
+COPY init_mirrorhub_client.py /usr/local/bin/
+CMD init_mirrorhub_client.py
