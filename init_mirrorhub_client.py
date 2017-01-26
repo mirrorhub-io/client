@@ -40,6 +40,7 @@ else:
 
 print('[nginx] Using %s as HOSTNAME' % HOSTNAME)
 
+print('[nginx] Applying temporary site configuration..')
 NGINX_CONF_TEMP = Template(open('/srv/internals/mirror_nonssl.j2').read())
 with open('/etc/nginx/sites-available/mirror.conf', 'w+') as f:
     f.write(NGINX_CONF_TEMP.render(domain=HOSTNAME, mirror_name='test'))
@@ -50,13 +51,17 @@ os.symlink('/etc/nginx/sites-available/mirror.conf',
 NGINX = subprocess.Popen('/usr/sbin/nginx')
 
 if os.path.exists('/etc/letsencrypt/live/' + HOSTNAME):
+    print('[cert] Found certificate for domain. Attempt renew..')
     exec_cmd('letsencrypt renew ' + LETSENCRYPT_ARGS)
 else:
+    print('[cert] Missing certificate for domain. Request new one..')
     exec_cmd('letsencrypt certonly %s --register-unsafely-without-email \
              --agree-tos -d %s' % (LETSENCRYPT_ARGS, HOSTNAME))
 
 os.kill(NGINX.pid, signal.SIGTERM)
 
+
+print('[nginx] Applying final site configuration..')
 NGINX_CONF_TEMP = Template(open('/srv/internals/mirror.j2').read())
 with open('/etc/nginx/sites-available/mirror.conf', 'w+') as f:
     f.write(NGINX_CONF_TEMP.render(domain=HOSTNAME, mirror_name='test'))
