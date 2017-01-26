@@ -1,15 +1,15 @@
 FROM ubuntu:latest
 
 RUN apt update -y && apt upgrade -y
-RUN apt install nginx supervisor letsencrypt prometheus-node-exporter python3 -y
+RUN apt install nginx supervisor letsencrypt prometheus-node-exporter python3 python3-jinja2 -y
 
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 ##
 # Configure nginx
 COPY nginx/nginx.conf /etc/nginx/nginx.conf
-COPY nginx/mirrorhub-client /etc/nginx/sites-available/mirrorhub-client
 RUN rm /etc/nginx/sites-enabled/default
+RUN rm /etc/nginx/sites-available/default
 
 ##
 # Configure Letsencrypt
