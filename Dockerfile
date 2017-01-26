@@ -16,6 +16,7 @@ RUN rm /etc/nginx/sites-available/default
 RUN mkdir -p /tmp/letsencrypt
 
 RUN mkdir -p /srv/internals
+RUN mkdir -p /srv/nginx
 
 COPY init_mirrorhub_client /usr/local/bin/
 CMD init_mirrorhub_client
