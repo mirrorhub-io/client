@@ -71,5 +71,10 @@ else:
 print('[nginx] Applying final site configuration..')
 gen_ngx_conf('mirror')
 
+RSYNCD_CONF = Template(open('/srv/internals/rsyncd.j2').read())
+with open('/etc/rsyncd.conf', 'w+') as f:
+  f.write(RSYNCD_CONF.render(mirror_name='test'))
+
+
 print('[mirror] Ready to serve!')
 exec_cmd('/usr/bin/supervisord')
